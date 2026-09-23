@@ -90,3 +90,45 @@ DELETE {{url}}/treinos/99999
 
 ### 12 - Listar de novo pra conferir       -> espera 200
 GET {{url}}/treinos
+
+
+# ============================================================
+# NOVO: TESTES DOS EXERCÍCIOS DA AULA 03 (7 a 12)
+# ============================================================
+
+### Exercicio 7 - Contagem total de treinos -> espera 200 e {"total": ...}
+GET {{url}}/treinos/total
+
+
+### Exercicio 8 - Filtro por duracao minima -> espera 200 (apenas duracao >= 40)
+GET {{url}}/treinos?minimo=40
+
+
+### Exercicio 10 - Busca por nome            -> espera 200 (apenas com 'peito' no nome)
+GET {{url}}/treinos?busca=peito
+
+
+### Exercicio 8 + 10 - Filtro e Busca juntos -> espera 200
+GET {{url}}/treinos?minimo=40&busca=peito
+
+
+### Exercicio 11 - Resumo dos treinos        -> espera 200 e {"total": ..., "minutos": ..., "media": ...}
+GET {{url}}/treinos/resumo
+
+
+### Exercicio 12 - ID invalido (texto no GET) -> espera 400 (ID invalido)
+GET {{url}}/treinos/abc
+
+
+### Exercicio 12 - ID invalido no PUT        -> espera 400 (ID invalido)
+PUT {{url}}/treinos/abc
+Content-Type: application/json
+
+{
+    "nome": "Peito e triceps",
+    "duracao": 60
+}
+
+
+### Exercicio 12 - ID invalido no DELETE     -> espera 400 (ID invalido)
+DELETE {{url}}/treinos/abc
