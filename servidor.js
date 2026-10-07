@@ -38,9 +38,19 @@ function validarTreino(corpo) {
 
 // ------------------------------------------------------------
 // GET /treinos - lista todos os treinos
+// Aceita ?minimo=40 (duracao maior ou igual) e ordena da maior
+// para a menor duracao
 // ------------------------------------------------------------
 app.get('/treinos', (req, res) => {
-  const treinos = db.prepare('SELECT * FROM treinos').all();
+  const minimo = req.query.minimo;
+  let treinos;
+  if (minimo !== undefined) {
+    treinos = db
+      .prepare('SELECT * FROM treinos WHERE duracao >= ? ORDER BY duracao DESC')
+      .all(Number(minimo));
+  } else {
+    treinos = db.prepare('SELECT * FROM treinos ORDER BY duracao DESC').all();
+  }
   res.status(200).json(treinos);
 });
 
@@ -66,6 +76,15 @@ app.get('/treinos/filtrar/duracao', (req, res) => {
   }
   const resultados = db.prepare('SELECT * FROM treinos WHERE duracao <= ?').all(max);
   res.status(200).json(resultados);
+});
+
+// ------------------------------------------------------------
+// GET /treinos/total - conta quantos treinos existem
+// (precisa vir antes do /treinos/:id, senao "total" vira um id)
+// ------------------------------------------------------------
+app.get('/treinos/total', (req, res) => {
+  const resultado = db.prepare('SELECT COUNT(*) AS total FROM treinos').get();
+  res.status(200).json(resultado);
 });
 
 // ------------------------------------------------------------
