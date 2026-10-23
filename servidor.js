@@ -1,23 +1,13 @@
 const express = require('express');
-const controller = require('./controllers/treinosController.js');
-const app = express();
-app.use(express.json());
-app.get('/treinos', controller.listar);
-app.get('/treinos/:id', controller.buscarUm);
-app.post('/treinos', controller.criar);
-app.put('/treinos/:id', controller.atualizar);
-app.delete('/treinos/:id', controller.remover);
-const PORTA = 3000;
-app.listen(PORTA, () => {
-console.log(`Servidor rodando em http://localhost:${PORTA}`);
 const { DatabaseSync } = require('node:sqlite');
 
-// Faz o Express entender JSON no corpo das requisicoes
+const app = express();
+
+// Faz o Express entender JSON no corpo das requisições
 app.use(express.json());
 
 // ------------------------------------------------------------
-// Os dados moram aqui, no arquivo treinos.db.
-// (Atualizado conforme a Aula 03 para persistencia de dados)
+// Banco de dados (treinos.db)
 // ------------------------------------------------------------
 const db = new DatabaseSync('treinos.db');
 
@@ -30,7 +20,7 @@ db.exec(`
 `);
 
 // ------------------------------------------------------------
-// Validacao
+// Validação
 // ------------------------------------------------------------
 function validarTreino(corpo) {
   if (typeof corpo.nome !== 'string' || corpo.nome.trim() === '') {
@@ -43,10 +33,10 @@ function validarTreino(corpo) {
 }
 
 // ------------------------------------------------------------
-// GET /treinos - lista todos os treinos
-// Aceita ?minimo=40 (duracao maior ou igual) e ordena da maior
-// para a menor duracao
+// Rotas da Aplicação
 // ------------------------------------------------------------
+
+// GET /treinos - lista todos os treinos
 app.get('/treinos', (req, res) => {
   const minimo = req.query.minimo;
   let treinos;
@@ -60,9 +50,7 @@ app.get('/treinos', (req, res) => {
   res.status(200).json(treinos);
 });
 
-// ------------------------------------------------------------
 // GET /treinos/filtrar/nome - busca treinos por termo no nome
-// ------------------------------------------------------------
 app.get('/treinos/filtrar/nome', (req, res) => {
   const termo = req.query.termo;
   if (!termo || termo.trim() === '') {
@@ -72,9 +60,7 @@ app.get('/treinos/filtrar/nome', (req, res) => {
   res.status(200).json(resultados);
 });
 
-// ------------------------------------------------------------
 // GET /treinos/filtrar/duracao - filtra treinos por duracao maxima
-// ------------------------------------------------------------
 app.get('/treinos/filtrar/duracao', (req, res) => {
   const max = Number(req.query.max);
   if (isNaN(max) || max <= 0) {
@@ -84,18 +70,13 @@ app.get('/treinos/filtrar/duracao', (req, res) => {
   res.status(200).json(resultados);
 });
 
-// ------------------------------------------------------------
 // GET /treinos/total - conta quantos treinos existem
-// (precisa vir antes do /treinos/:id, senao "total" vira um id)
-// ------------------------------------------------------------
 app.get('/treinos/total', (req, res) => {
   const resultado = db.prepare('SELECT COUNT(*) AS total FROM treinos').get();
   res.status(200).json(resultado);
 });
 
-// ------------------------------------------------------------
-// GET /treinos/:id - busca um treino pelo id (404 se nao existir)
-// ------------------------------------------------------------
+// GET /treinos/:id - busca um treino pelo id
 app.get('/treinos/:id', (req, res) => {
   const id = Number(req.params.id);
   const treino = db.prepare('SELECT * FROM treinos WHERE id = ?').get(id);
@@ -105,57 +86,58 @@ app.get('/treinos/:id', (req, res) => {
   res.status(200).json(treino);
 });
 
-// ------------------------------------------------------------
-// POST /treinos - cria um treino (400 se os dados forem invalidos)
-// ------------------------------------------------------------
+// POST /treinos - cria um treino
 app.post('/treinos', (req, res) => {
   const erro = validarTreino(req.body);
-  if (erro !== null){
+  if (erro !== null) {
     return res.status(400).json({ erro: erro });
   }
-  // Insere no banco
+
   const resultado = db
     .prepare('INSERT INTO treinos (nome, duracao) VALUES (?, ?)')
     .run(req.body.nome, req.body.duracao);
-  // Busca o treino recem-criado para devolver com o id gerado
+
   const novo = db
     .prepare('SELECT * FROM treinos WHERE id = ?')
     .get(resultado.lastInsertRowid);
+
   res.status(201).json(novo);
 });
 
-// ------------------------------------------------------------
 // PUT /treinos/:id - substitui um treino
-// ------------------------------------------------------------
 app.put('/treinos/:id', (req, res) => {
   const id = Number(req.params.id);
   const treino = db.prepare('SELECT * FROM treinos WHERE id = ?').get(id);
   if (treino === undefined) {
     return res.status(404).json({ erro: 'Treino nao encontrado.' });
   }
+
   const erro = validarTreino(req.body);
-  if (erro !== null){
+  if (erro !== null) {
     return res.status(400).json({ erro: erro });
   }
+
   db.prepare('UPDATE treinos SET nome = ?, duracao = ? WHERE id = ?')
     .run(req.body.nome, req.body.duracao, id);
+
   const atualizado = db.prepare('SELECT * FROM treinos WHERE id = ?').get(id);
   res.status(200).json(atualizado);
 });
 
-// ------------------------------------------------------------
 // DELETE /treinos/:id - remove um treino
-// ------------------------------------------------------------
 app.delete('/treinos/:id', (req, res) => {
   const id = Number(req.params.id);
   const treino = db.prepare('SELECT * FROM treinos WHERE id = ?').get(id);
   if (treino === undefined) {
     return res.status(404).json({ erro: 'Treino nao encontrado.' });
   }
+
   db.prepare('DELETE FROM treinos WHERE id = ?').run(id);
   res.status(204).end();
 });
 
+// ------------------------------------------------------------
+// Inicialização do Servidor
 // ------------------------------------------------------------
 const PORTA = 3000;
 app.listen(PORTA, () => {
