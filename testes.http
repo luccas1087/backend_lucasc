@@ -1,10 +1,3 @@
-### ============================================================
-### testes.http - o contrato da API
-### ============================================================
-### Abra este arquivo no VS Code com a extensao REST Client e
-### clique em "Send Request" em cada bloco.
-### Voce terminou a aula quando TODAS responderem o status certo.
-### ============================================================
 
 @url = http://localhost:3000
 
@@ -92,9 +85,6 @@ DELETE {{url}}/treinos/99999
 GET {{url}}/treinos
 
 
-# ============================================================
-# NOVO: TESTES DOS EXERCÍCIOS DA AULA 03 (7 a 12)
-# ============================================================
 
 ### Exercicio 7 - Contagem total de treinos -> espera 200 e {"total": ...}
 GET {{url}}/treinos/total
@@ -132,3 +122,55 @@ Content-Type: application/json
 
 ### Exercicio 12 - ID invalido no DELETE     -> espera 400 (ID invalido)
 DELETE {{url}}/treinos/abc
+
+# ============================================================
+# AULA 05 - SESSAO E COOKIE
+# ============================================================
+
+### Criar treino SEM login -> espera 401
+POST {{url}}/treinos
+Content-Type: application/json
+
+{ "nome": "Sem login", "duracao": 20 }
+
+### Login com senha certa -> 200 + Set-Cookie
+POST {{url}}/login
+Content-Type: application/json
+
+{ "usuario": "diego", "senha": "1234" }
+
+### Perfil -> 200 (diego)
+GET {{url}}/perfil
+
+### Criar treino logado -> 201
+POST {{url}}/treinos
+Content-Type: application/json
+
+{ "nome": "Logado", "duracao": 20 }
+
+### Logout -> 204
+POST {{url}}/logout
+
+### Perfil de novo -> 401
+GET {{url}}/perfil
+
+### Senha errada -> 401
+POST {{url}}/login
+Content-Type: application/json
+
+{ "usuario": "diego", "senha": "errada" }
+
+### Usuario inexistente -> 401 (mesma mensagem)
+POST {{url}}/login
+Content-Type: application/json
+
+{ "usuario": "fantasma", "senha": "x" }
+
+### Duas pessoas: logar como aluno -> perfil tem que ser "aluno"
+POST {{url}}/login
+Content-Type: application/json
+
+{ "usuario": "aluno", "senha": "senha" }
+
+### Perfil do aluno -> 200 (aluno)
+GET {{url}}/perfil
